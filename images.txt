@@ -1,6 +1,5 @@
 qwenllm/qwen:latest
-qwenllm/qwenvl:2-cu121-wo-flashattn
-nvidia/cuda:12.2.2-devel-ubuntu20.04
+
 #支持私库
 
 #支持指定架构
