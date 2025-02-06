@@ -2,7 +2,9 @@ qwenllm/qwen:latest
 hpcaitech/pytorch-cuda:2.1.0-12.1.0
 vllm/vllm-openai:latest
 ollama/ollama:latest
+ghcr.io/open-webui/open-webui:main
 #支持私库
+
 
 #支持指定架构
 
