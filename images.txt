@@ -4,6 +4,7 @@ vllm/vllm-openai:latest
 ollama/ollama:latest
 ghcr.io/open-webui/open-webui:main
 langgenius/dify-api:1.0.0
+foundationmodels/unsloth
 #支持私库
 
 
