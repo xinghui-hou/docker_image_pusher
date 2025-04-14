@@ -1,11 +1,11 @@
-qwenllm/qwen:latest
+
 lmsysorg/sglang:latest       
 vllm/vllm-openai:latest
 ollama/ollama:latest
 ghcr.io/open-webui/open-webui:main
 langgenius/dify-api:1.0.0
 foundationmodels/unsloth
-docker.n8n.io/n8nio/n8n
+
 #支持私库
 
 
