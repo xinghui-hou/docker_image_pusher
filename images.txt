@@ -2,8 +2,6 @@
 lmsysorg/sglang:latest       
 vllm/vllm-openai:latest
 ollama/ollama:latest
-ghcr.io/open-webui/open-webui:main
-foundationmodels/unsloth
 nvcr.io/nvidia/pytorch:24.12-py3
 
 #支持私库
