@@ -1,6 +1,11 @@
 
 lmsysorg/sglang:latest       
-vllm/vllm-openai:latest
+#vllm/vllm-openai:latest
+vllm/vllm-openai:v0.10.2
+vllm/vllm-openai:v0.9.2
+lmsysorg/sglang:v0.5.3.post3
+lmsysorg/sglang:v0.5.2
+
 ollama/ollama:latest
 nvcr.io/nvidia/pytorch:24.12-py3
 
