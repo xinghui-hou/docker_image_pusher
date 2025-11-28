@@ -1,6 +1,6 @@
 
 lmsysorg/sglang:latest       
-kasmweb/chromium:1.18.0
+lscr.io/linuxserver/chromium:latest
 vllm/vllm-openai:latest
 lmsysorg/sglang:v0.5.5.post3
 vllm/vllm-openai:v0.11.2
