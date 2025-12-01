@@ -1,4 +1,5 @@
-
+hiyouga/llamafactory:latest
+hiyouga/llamafactory:0.9.3
 lmsysorg/sglang:latest       
 lscr.io/linuxserver/chromium:latest
 vllm/vllm-openai:latest
