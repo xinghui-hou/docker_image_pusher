@@ -2,6 +2,7 @@ hiyouga/llamafactory:latest
 hiyouga/llamafactory:0.9.3
 quay.io/ascend/vllm-ascend:v0.9.1
 thxcode/mindie:2.1.RC1-800I-A2-py311-openeuler24.03-lts
+thxcode/mindie:2.0.RC1-800I-A3-py311-openeuler24.03-lts
 lmsysorg/sglang:latest       
 lscr.io/linuxserver/chromium:latest
 vllm/vllm-openai:latest
