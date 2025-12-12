@@ -1,8 +1,7 @@
 hiyouga/llamafactory:latest
 quay.io/ascend/vllm-ascend:v0.9.1
 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.1.RC2-800I-A3-py311-openeuler24.03-lts
-swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.2.RC1.B153-800I-A3-py3.11-openeuler24.03-lts-aarch64
-
+swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.2.RC1-800I-A3-py311-openeuler24.03-lts
 lmsysorg/sglang:latest       
 lscr.io/linuxserver/chromium:latest
 vllm/vllm-openai:latest
