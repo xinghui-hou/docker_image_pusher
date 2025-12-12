@@ -1,17 +1,13 @@
+##支持指定架构X86
 hiyouga/llamafactory:latest
-quay.io/ascend/vllm-ascend:v0.9.1
-swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.1.RC2-800I-A3-py311-openeuler24.03-lts
-swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.2.RC1-800I-A3-py311-openeuler24.03-lts
 lmsysorg/sglang:latest       
-lscr.io/linuxserver/chromium:latest
 vllm/vllm-openai:latest
-lmsysorg/sglang:v0.5.5.post3
-
-ollama/ollama:latest
-nvcr.io/nvidia/pytorch:24.12-py3
 
 #支持私库
 
+#支持指定架构arm
+–-platform linux/arm64 openeuler/vllm-ascend:0.9.1rc1-torch_npu2.5.1-cann8.1.rc1-python3.10-oe2203lts
+–-platform linux/arm64 quay.io/ascend/vllm-ascend:v0.9.1
 
-#支持指定架构
-
+–-platform linux/arm64 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.1.RC2-800I-A3-py311-openeuler24.03-lts
+–-platform linux/arm64 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.2.RC1-800I-A3-py311-openeuler24.03-lts
