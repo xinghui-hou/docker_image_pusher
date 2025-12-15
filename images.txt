@@ -6,7 +6,6 @@ vllm/vllm-openai:latest
 #支持私库
 
 #支持指定架构arm
---platform=linux/arm64
 --platform=linux/arm64 openeuler/vllm-ascend:0.9.1rc1-torch_npu2.5.1-cann8.1.rc1-python3.10-oe2203lts
 --platform=linux/arm64 quay.io/ascend/vllm-ascend:v0.9.1
 
