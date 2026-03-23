@@ -1,7 +1,9 @@
 ##支持指定架构X86
 hiyouga/llamafactory:latest
 lmsysorg/sglang:latest       
+lmsysorg/sglang:nightly-dev-cu13-20260321-94194537
 vllm/vllm-openai:latest
+
 
 #支持私库
 
