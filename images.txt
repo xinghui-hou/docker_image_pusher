@@ -1,6 +1,7 @@
 ##支持指定架构X86
 lmsysorg/sglang:latest       
 vllm/vllm-openai:latest
+ubuntu:22.04
 
 vllm/vllm-openai:v0.25.1-ubuntu2404
 
