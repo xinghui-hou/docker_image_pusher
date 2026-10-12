@@ -11,7 +11,10 @@
   * 只用标准库 + PyYAML（仅用于读配置），不需要 docker / skopeo。
   * 通过 Docker Hub v2 API 拿 tag 列表（含 name / digest / last_updated / images）。
   * "跟随官方默认"：用 latest 的 digest 反查同 digest 的版本 tag，不猜后缀。
-  * 保留策略：时间窗 window_days + 每个 (major, minor) 取最新 patch。
+  * 变体白名单：后缀不在 preferred_variants 里的 tag 不参与选版
+    （否则 -rocm700-ml35x 这类异种构建会靠 .postN 在版本号上胜出）。
+  * 保留策略：时间窗 window_days 内、按 group_level 每组取最高版本、
+    最多保留 max_versions 个版本行。
   * 只改 managed 块，其它行原样保留；内容无变化则不写盘。
   * 单仓库失败隔离：某个镜像失败时保留它的旧块，继续处理下一个。
 
@@ -181,11 +184,16 @@ def parse_ver(name):
 
 
 def variant_rank(suffix, preferred):
-    """后缀优先级：越靠前越小；不在列表里的无后缀优先于有后缀。"""
+    """后缀优先级：越靠前越小；不在列表里的排到最后。"""
     try:
         return preferred.index(suffix)
     except ValueError:
         return len(preferred) + (0 if suffix == "" else 1)
+
+
+def variant_allowed(suffix, preferred):
+    """后缀是否在白名单里。不在白名单的变体（如 -rocm700-ml35x）直接不参与选版。"""
+    return suffix in preferred
 
 
 def choose_latest_version(rows, preferred):
@@ -201,14 +209,21 @@ def choose_latest_version(rows, preferred):
         if r["name"] != "latest" and r["digest"] == latest["digest"] and parse_ver(r["name"])
     ]
     if hits:
-        hits.sort(
+        # 优先白名单内的变体；若 latest 恰好只指向一个陌生变体，则如实返回它
+        # （因为那就是"官方默认"，不能因为不认识的配置而丢失反查能力）
+        allowed = [r for r in hits if variant_allowed(parse_ver(r["name"])[4], preferred)]
+        pool = allowed or hits
+        pool.sort(
             key=lambda r: (
                 variant_rank(parse_ver(r["name"])[4], preferred),
                 len(r["name"]),
                 r["name"],
             )
         )
-        return hits[0]["name"], f"digest-exact(x{len(hits)})"
+        note = f"digest-exact(x{len(hits)})"
+        if not allowed:
+            note += ",variant-off-list"
+        return pool[0]["name"], note
 
     # 2) 兜底：按 (os, arch) -> digest 的映射完全相等来匹配
     def arch_map(row):
@@ -220,11 +235,16 @@ def choose_latest_version(rows, preferred):
 
     latest_map = arch_map(latest)
     if latest_map:
-        for row in rows:
-            if row["name"] == "latest" or not parse_ver(row["name"]):
-                continue
-            if arch_map(row) == latest_map:
-                return row["name"], "digest-arch"
+        pool = [
+            r
+            for r in rows
+            if r["name"] != "latest"
+            and parse_ver(r["name"])
+            and arch_map(r) == latest_map
+        ]
+        allowed = [r for r in pool if variant_allowed(parse_ver(r["name"])[4], preferred)]
+        for row in allowed or pool:
+            return row["name"], "digest-arch"
 
     return None, "no-match"
 
@@ -238,13 +258,20 @@ def group_key(ver, level):
 
 
 def pick_versions(rows, window_days, preferred, group_level="minor", keep_always=()):
-    """按 group_level 分组，每组只保留最高版本；按版本降序返回 tag 名。"""
+    """按 group_level 分组，每组只保留最高版本；按版本降序返回 tag 名。
+
+    变体白名单：后缀不在 preferred_variants 里的 tag 一律不参与选版。
+    否则形如 v0.5.15.post1-rocm700-ml35x（AMD ROCm 构建）会靠 .post1 在
+    版本号上压过裸 v0.5.15，把一张不该要的镜像推进仓库。
+    """
     cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=window_days)
     keep_always = set(keep_always)
     best = {}
     for row in rows:
         ver = parse_ver(row["name"])
         if ver is None:
+            continue
+        if not variant_allowed(ver[4], preferred):
             continue
         if row["last_updated"] < cutoff and row["name"] not in keep_always:
             continue
@@ -256,10 +283,15 @@ def pick_versions(rows, window_days, preferred, group_level="minor", keep_always
     return [name for _, name in ordered]
 
 
-def build_block(cfg, rows, window_days):
+def _sort_desc(names):
+    return sorted(names, key=lambda n: parse_ver(n) or (0,), reverse=True)
+
+
+def build_block(cfg, rows, window_days, default_limit=None):
     """为单个镜像生成 managed 块（行列表）。"""
     src = cfg["source"]
     preferred = cfg.get("preferred_variants") or [""]
+    limit = cfg.get("max_versions", default_limit)
 
     lines = [BEGIN_FMT.format(src=src), NOTE_LINE]
     if cfg.get("include_latest", True):
@@ -275,6 +307,14 @@ def build_block(cfg, rows, window_days):
     )
     if latest_tag and latest_tag not in names:
         names.insert(0, latest_tag)
+
+    # 截断到 max_versions 个版本行（不含 :latest）。
+    # latest 指向的那个版本必须保留 —— 若它被截掉，就挤掉最低位的那个。
+    if limit and limit > 0 and len(names) > limit:
+        names = names[:limit]
+        if latest_tag and latest_tag not in names:
+            names[-1] = latest_tag
+        names = _sort_desc(names)
 
     lines.extend(f"{src}:{name}" for name in names)
     lines.append(END_FMT.format(src=src))
@@ -417,6 +457,7 @@ def main():
 
     cfg = load_config(args.config)
     window_days = int(cfg.get("window_days", 90))
+    default_limit = cfg.get("max_versions")
 
     results = {}
     failures = 0
@@ -427,7 +468,7 @@ def main():
             rows = fetch_tags(ns, repo, window_days, fixture_dir=args.fixture_dir)
             if not rows:
                 raise RuntimeError("上游返回空 tag 列表")
-            block, how = build_block(item, rows, window_days)
+            block, how = build_block(item, rows, window_days, default_limit)
             if how in ("no-match", "no-latest") and (item.get("fallback") or "hold") == "hold":
                 fallback = existing_block(args.images, src)
                 print(
@@ -441,7 +482,10 @@ def main():
                 1 for line in block if not line.startswith("#") and not line.endswith(":latest")
             )
             results[src] = block
-            print(f"[ok]   {src}: 匹配方式={how}, 版本行={version_count}")
+            print(
+                f"[ok]   {src}: 匹配方式={how}, 版本行={version_count}"
+                f"（上限 {item.get('max_versions', default_limit) or '不限'}）"
+            )
         except Exception as exc:
             failures += 1
             print(f"[warn] {src}: {exc} —— 保留原有内容", file=sys.stderr)

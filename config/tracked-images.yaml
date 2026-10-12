@@ -5,18 +5,24 @@
 # 时间窗：只保留最近 N 天内有更新的版本（latest 当前指向的版本不受此限）。
 window_days: 90
 
+# 每个镜像最多保留多少个"带版本号"的行（不含 :latest）。
+# 0 或删掉此项 = 不限。镜像级可用同名键单独覆盖。
+max_versions: 3
+
 # 注意：不同项目的版本号语义不同，分组粒度要分别配置：
 #   vllm  -> 0.25.1 / 0.26.0   迭代在 minor 位  -> group_level: minor
 #   sglang-> 0.4.3 / 0.4.5     迭代在 patch 位  -> group_level: patch
-# 含义是"同一组里只保留版本最高的那个"。
+# 含义是"同一组里只保留版本最高的那个"。截断时只取版本号最高的 max_versions 个。
 
 images:
   - source: lmsysorg/sglang
     group_level: patch
     # 是否在 managed 块里保留一行 :latest（跟随上游最新）
     include_latest: true
-    # 同一版本存在多个变体 tag 时的优先次序，越靠前越优先。
-    # 空字符串 "" 代表无后缀的裸版本号（如 v0.4.3.post1）。
+    # 变体白名单：只有后缀在列表里的 tag 才参与选版（越靠前越优先）。
+    # 空字符串 "" 代表无后缀的裸版本号（如 v0.4.3.post2）。
+    # 不在列表里的变体（如 -rocm700-ml35x、-lmslim）会被直接忽略 —— 宁可少一个
+    # 版本，也不要把 AMD/实验构建推进仓库。
     preferred_variants: ["", "-cu124", "-cu126", "-cu128"]
     # 反查不到 latest 对应哪个版本时的行为：hold = 本轮不动，等下一轮再试。
     fallback: hold

@@ -12,7 +12,6 @@ on:
         description: '只打印结果不写盘'
         type: boolean
         default: false
-
 # GITHUB_TOKEN 触发的 push 不会再触发其它 workflow（GitHub 防递归），
 # 所以下面要用 gh workflow run 显式触发 Docker workflow，需要 actions: write。
 permissions:
@@ -49,7 +48,10 @@ jobs:
           fi
 
       - name: Commit and push
-        if: steps.upd.outputs.changed == 'yes' && inputs.dry_run != 'true'
+        # 注意：inputs.dry_run 是布尔值，不能和字符串 'true' 比较
+        # （GitHub 表达式跨类型比较会转成数字：true→1、'true'→NaN，1 != NaN 恒真，
+        #  结果 dry_run 时也会执行这一步）。用 !inputs.dry_run 表达"非 dry-run"。
+        if: ${{ !inputs.dry_run && steps.upd.outputs.changed == 'yes' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -58,7 +60,7 @@ jobs:
           git push
 
       - name: Trigger Docker workflow
-        if: steps.upd.outputs.changed == 'yes' && inputs.dry_run != 'true'
+        if: ${{ !inputs.dry_run && steps.upd.outputs.changed == 'yes' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run "Docker" --ref main --repo "${{ github.repository }}"
