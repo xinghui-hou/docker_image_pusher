@@ -1,0 +1,28 @@
+# 被跟踪镜像的配置。
+# scripts/update_images.py 读这份配置去上游发现版本，并改写 images.txt 的 managed 块。
+# 新增一个镜像：在 images 下追加一项即可；images.txt 里对应的行由脚本自动管理。
+
+# 时间窗：只保留最近 N 天内有更新的版本（latest 当前指向的版本不受此限）。
+window_days: 90
+
+# 注意：不同项目的版本号语义不同，分组粒度要分别配置：
+#   vllm  -> 0.25.1 / 0.26.0   迭代在 minor 位  -> group_level: minor
+#   sglang-> 0.4.3 / 0.4.5     迭代在 patch 位  -> group_level: patch
+# 含义是"同一组里只保留版本最高的那个"。
+
+images:
+  - source: lmsysorg/sglang
+    group_level: patch
+    # 是否在 managed 块里保留一行 :latest（跟随上游最新）
+    include_latest: true
+    # 同一版本存在多个变体 tag 时的优先次序，越靠前越优先。
+    # 空字符串 "" 代表无后缀的裸版本号（如 v0.4.3.post1）。
+    preferred_variants: ["", "-cu124", "-cu126", "-cu128"]
+    # 反查不到 latest 对应哪个版本时的行为：hold = 本轮不动，等下一轮再试。
+    fallback: hold
+
+  - source: vllm/vllm-openai
+    group_level: minor
+    include_latest: true
+    preferred_variants: ["", "-ubuntu2404", "-ubuntu2204", "-cu124", "-cu128"]
+    fallback: hold

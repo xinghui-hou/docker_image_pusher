@@ -1,0 +1,64 @@
+name: Update image versions
+
+# 定时发现上游镜像的新版本号，改写 images.txt 里被托管的 managed 块，
+# 提交后再显式触发 Docker workflow 去同步镜像。
+
+on:
+  schedule:
+    - cron: '17 20 * * *'   # UTC 20:17 = 北京 04:17，早于 Docker workflow 的 07:07
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只打印结果不写盘'
+        type: boolean
+        default: false
+
+# GITHUB_TOKEN 触发的 push 不会再触发其它 workflow（GitHub 防递归），
+# 所以下面要用 gh workflow run 显式触发 Docker workflow，需要 actions: write。
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: update-versions
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install --quiet pyyaml
+
+      - name: Discover versions and rewrite images.txt
+        id: upd
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python scripts/update_images.py --dry-run
+          else
+            python scripts/update_images.py
+          fi
+
+      - name: Commit and push
+        if: steps.upd.outputs.changed == 'yes' && inputs.dry_run != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add images.txt
+          git commit -m "chore(images): sync versioned tags"
+          git push
+
+      - name: Trigger Docker workflow
+        if: steps.upd.outputs.changed == 'yes' && inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run "Docker" --ref main --repo "${{ github.repository }}"

@@ -4,8 +4,15 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+    paths:
+      - 'images.txt'
+      - '.github/workflows/docker.yaml'
   schedule:
     - cron: '7 23 * * *'
+
+concurrency:
+  group: docker-sync
+  cancel-in-progress: false
 
 env:
   ALIYUN_REGISTRY: "${{ secrets.ALIYUN_REGISTRY }}"
