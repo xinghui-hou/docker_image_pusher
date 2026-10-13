@@ -16,12 +16,9 @@ vllm/vllm-openai:v0.30.0
 vllm/vllm-openai:v0.29.0
 # <<< END managed: docker.io/vllm/vllm-openai <<<
 
-ubuntu:22.04
-
 #支持私库
 
 #支持指定架构arm
---platform=arm64 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.3.0-800I-A3-py311-openeuler24.03-lts
---platform=arm64 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.2.RC1-800I-A3-py311-openeuler24.03-lts
-
+#--platform=arm64 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.3.0-800I-A3-py311-openeuler24.03-lts
+#--platform=arm64 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.2.RC1-800I-A3-py311-openeuler24.03-lts
 #--platform=linux/arm64 swr.cn-south-1.myhuaweicloud.com/ascendhub/mindie:2.0.RC1-800I-A3-py311-openeuler24.03-lts
